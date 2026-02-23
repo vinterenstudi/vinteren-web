@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arken`e</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f7f4ee;
+  --ink: #1c1c1a;
+  --muted: #9e9a93;
+  --line: rgba(28,28,26,0.11);
+  --blue1: #3a6ea8;
+  --blue2: #5b8fcf;
+  --blue3: #8ab4e8;
+  --blue4: #b8d4f5;
+  --blue5: #1e4d8c;
+  --warm: #e8c97a;      /* altın sarı vurgu */
+  --warm-soft: #f5e6b8; /* açık sarı */
+  --roof: #e8ddd0;      /* çatı tonu */
+}
+
+body {
+  background: var(--bg);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+  color: var(--ink);
+  user-select: none;
+}
+
+/* ── LOADING ── */
+#loading {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 99;
+  transition: opacity 0.9s ease, visibility 0.9s;
+}
+#loading.hide { opacity: 0; visibility: hidden; }
+.loader-line {
+  width: 48px; height: 1px;
+  background: var(--line); position: relative; overflow: hidden;
+}
+.loader-line::after {
+  content: ''; position: absolute; left: -100%; top: 0;
+  width: 100%; height: 100%; background: var(--ink);
+  animation: slide 1.4s ease-in-out infinite;
+}
+@keyframes slide { 0%{left:-100%} 50%{left:0} 100%{left:100%} }
+
+/* ── ARRIVED — üst bölüm küçülür ── */
+#upper-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  transform-origin: top center;
+  transition: transform 0.8s cubic-bezier(0.4,0,0.2,1), opacity 0.8s ease;
+}
+#upper-section.shrink {
+  transform: scale(0.5);
+  opacity: 0.45;
+}
+
+/* Buket teslimatta büyür */
+#bouquet-wrap.show { opacity: 1; transform: translateY(0) scale(1); }
+#bouquet-wrap.big  { transform: scale(1.7) translateY(-8px) !important; }
+
+/* ── SCENE ── */
+#scene {
+  width: 100vw;
+  max-width: 720px;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  opacity: 0;
+  transition: opacity 0.8s;
+}
+#scene.show { opacity: 1; }
+
+/* ── TIMER ── */
+#timer-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
+}
+#timer-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+#timer-digits {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2.2rem, 7vw, 4rem);
+  color: var(--blue1);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+#timer-sub {
+  margin-top: 8px;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* ── PROGRESS DOTS ── */
+#progress-dots {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 36px;
+}
+.dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: background 0.6s;
+}
+.dot.filled { background: var(--blue2); }
+
+/* ── ROAD ── */
+#road-strip {
+  width: 92vw;
+  max-width: 660px;
+  position: relative;
+  height: 150px;
+  display: flex;
+  align-items: flex-end;
+}
+#road-line {
+  position: absolute;
+  bottom: 30px; left: 68px; right: 68px;
+  height: 1px;
+  background: var(--line);
+}
+#road-dash {
+  position: absolute;
+  bottom: 37px; left: 88px; right: 88px;
+  height: 1px;
+  background: repeating-linear-gradient(
+    to right,
+    rgba(58,110,168,0.15) 0px, rgba(58,110,168,0.15) 8px,
+    transparent 8px, transparent 18px
+  );
+}
+
+.house {
+  position: absolute;
+  bottom: 30px;
+}
+#house-left  { left: 0; width: 70px; }
+#house-right { right: 0; width: 70px; }
+
+/* ── TRUCK ── */
+#truck-wrap {
+  position: absolute;
+  bottom: 32px;
+  left: 76px;
+  transition: left 1.4s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── ARRIVED MESSAGE ── */
+#arrived-msg {
+  margin-top: 14px;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--blue2);
+  opacity: 0;
+  transition: opacity 0.8s;
+  text-align: center;
+}
+#arrived-msg.show { opacity: 1; }
+
+/* ── BOUQUET ── */
+#bouquet-wrap {
+  margin-top: 24px;
+  opacity: 0;
+  transform: translateY(14px) scale(1);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transform-origin: center bottom;
+}
+#bouquet-wrap.show:hover { transform: translateY(-4px) scale(1); }
+#bouquet-wrap.big:hover  { transform: scale(1.75) translateY(-12px) !important; }
+
+.bouquet-hint {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  animation: bpulse 2.2s ease-in-out infinite;
+}
+@keyframes bpulse { 0%,100%{opacity:0.35} 50%{opacity:1} }
+
+.bouquet-svg { width: 148px; height: 198px; overflow: visible; }
+
+.r-path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+}
+.r-path.draw {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.75s ease;
+}
+
+/* ── CONFETTI ── */
+.confetti-piece {
+  position: fixed;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  border-radius: 1px;
+}
+.confetti-piece.drop {
+  animation: confettiFall var(--d,3s) var(--dl,0s) ease-in forwards;
+}
+@keyframes confettiFall {
+  0%   { opacity: 1; transform: translateY(0) rotate(var(--r,0deg)) translateX(0); }
+  80%  { opacity: 0.8; }
+  100% { opacity: 0; transform: translateY(100vh) rotate(calc(var(--r,0deg) + 480deg)) translateX(var(--x,30px)); }
+}
+
+/* ── ENVELOPE OVERLAY ── */
+#env-overlay {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 60px;
+  padding-bottom: 60px;
+  overflow-y: auto;   /* TÜM sayfayı kaydırılabilir yapar */
+  -webkit-overflow-scrolling: touch;
+  z-index: 80;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.7s, visibility 0.7s;
+}
+#env-overlay.show { opacity: 1; visibility: visible; }
+
+#env-wrap {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease 0.3s, transform 0.7s ease 0.3s;
+  width: 375px;
+  flex-shrink: 0;
+}
+#env-overlay.show #env-wrap { opacity: 1; transform: translateY(0); }
+
+.env-outer { width: 375px; cursor: pointer; perspective: 800px; position: relative; }
+.env-body {
+  width: 375px; height: 238px;
+  background: #f0f6ff; border: 1px solid rgba(58,110,168,0.2);
+  position: relative; overflow: visible;
+}
+.env-flap {
+  position: absolute; top: 0; left: 0;
+  width: 375px; height: 163px;
+  background: #e8f0fb; border: 1px solid rgba(58,110,168,0.2); border-bottom: none;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top center;
+  transform: rotateX(0deg);
+  transition: transform 0.65s cubic-bezier(0.4,0,0.2,1);
+  z-index: 3;
+}
+.env-flap.open { transform: rotateX(-175deg); }
+.env-lt { position:absolute; bottom:0; left:0; width:0; height:0; border-style:solid; z-index:1; border-width:119px 0 0 188px; border-color:transparent transparent transparent #ddeeff; }
+.env-rt { position:absolute; bottom:0; right:0; width:0; height:0; border-style:solid; z-index:1; border-width:119px 188px 0 0; border-color:transparent #ddeeff transparent transparent; }
+.env-bt { position:absolute; bottom:0; left:0; width:375px; height:119px; background:#ddeeff; clip-path:polygon(0 100%,100% 100%,50% 0); z-index:1; }
+
+.env-hint {
+  text-align:center; margin-top:16px;
+  font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--muted); opacity:0; transition:opacity 0.6s;
+}
+.env-hint.show { opacity:1; }
+
+/* ── LETTER (doğal büyüme, scroll serbest) ── */
+#letter-sheet {
+  width: 375px;
+  background: #fafcff;
+  border: 1px solid rgba(58,110,168,0.18);
+  border-top: none;
+  padding: 28px 28px 32px;
+  margin-top: 0;
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  /* transition yok — JS ile height:auto yapacağız */
+}
+#letter-sheet.open {
+  opacity: 1;
+  height: auto;
+  overflow: visible;
+}
+
+.letter-date {
+  display: block;
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+#typewriter {
+  font-family: 'DM Serif Display', serif;
+  font-size: 0.82rem;
+  line-height: 1.9;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+.cursor {
+  display: inline-block; width: 1.5px; height: 1em;
+  background: var(--ink); margin-left: 1px; vertical-align: middle;
+  animation: blink 0.8s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.letter-sig {
+  margin-top: 22px;
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.8s;
+  text-align: right;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.letter-sig.show { opacity: 1; }
+
+/* Wheel spin */
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.wheel-spin {
+  animation: spin 1.2s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="loader-line"></div></div>
+
+<div id="scene">
+
+  <div id="upper-section">
+  <div id="timer-box">
+    <div id="timer-label">teslimat</div>
+    <div id="timer-digits">--:--:--</div>
+    <div id="timer-sub">24 Şubat 2026 · 00:00</div>
+  </div>
+
+  <div id="progress-dots"></div>
+
+  <div id="road-strip">
+    <div id="road-line"></div>
+    <div id="road-dash"></div>
+
+    <!-- Sol ev -->
+    <div class="house" id="house-left">
+      <svg viewBox="0 0 70 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="40" width="54" height="46" fill="#fff" stroke="#1c1c1a" stroke-width="1.1"/>
+        <path d="M4 42 L35 10 L66 42" stroke="#1c1c1a" stroke-width="1.1" fill="#e8ddd0"/>
+        <!-- Kapı — normal renk -->
+        <rect x="26" y="62" width="18" height="24" fill="#c8a87a" stroke="#9a7a4a" stroke-width="0.9"/>
+        <circle cx="41" cy="75" r="1.5" fill="#fff" opacity="0.7"/>
+        <rect x="11" y="48" width="13" height="11" fill="#ddeeff" stroke="#1c1c1a" stroke-width="0.75"/>
+        <rect x="46" y="48" width="13" height="11" fill="#ddeeff" stroke="#1c1c1a" stroke-width="0.75"/>
+        <rect x="46" y="16" width="8" height="16" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="0.9"/>
+      </svg>
+    </div>
+
+    <!-- Kamyon -->
+    <div id="truck-wrap">
+      <svg width="80" height="44" viewBox="0 0 80 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="6" width="46" height="26" rx="1.5" fill="#fff" stroke="#1c1c1a" stroke-width="1.1"/>
+        <line x1="17" y1="6" x2="17" y2="32" stroke="#1c1c1a" stroke-width="0.5" opacity="0.25"/>
+        <line x1="32" y1="6" x2="32" y2="32" stroke="#1c1c1a" stroke-width="0.5" opacity="0.25"/>
+        <!-- Paket -->
+        <rect x="20" y="12" width="10" height="10" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="0.7"/>
+        <line x1="25" y1="12" x2="25" y2="22" stroke="#1c1c1a" stroke-width="0.6"/>
+        <line x1="20" y1="17" x2="30" y2="17" stroke="#1c1c1a" stroke-width="0.6"/>
+        <!-- Kabin -->
+        <path d="M48 32 L48 14 L56 14 L72 20 L76 28 L76 32 Z" fill="#f8f6f2" stroke="#1c1c1a" stroke-width="1.1"/>
+        <path d="M51 14.5 L55 14.5 L68 20 L68 26 L51 26 Z" fill="#e8e4dc" stroke="#1c1c1a" stroke-width="0.7"/>
+        <rect x="72" y="24" width="4" height="5" rx="1" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="0.7"/>
+        <rect x="53" y="8" width="4" height="8" rx="1" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="0.7"/>
+        <rect x="4" y="30" width="72" height="4" rx="1" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="0.7"/>
+        <!-- Tekerlekler -->
+        <circle class="wheel-spin" id="tw1" cx="16" cy="38" r="6" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="1.1"/>
+        <circle cx="16" cy="38" r="2" fill="#1c1c1a" opacity="0.25"/>
+        <circle class="wheel-spin" id="tw2" cx="30" cy="38" r="6" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="1.1"/>
+        <circle cx="30" cy="38" r="2" fill="#1c1c1a" opacity="0.25"/>
+        <circle class="wheel-spin" id="tw3" cx="62" cy="38" r="6" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="1.1"/>
+        <circle cx="62" cy="38" r="2" fill="#1c1c1a" opacity="0.25"/>
+        <!-- Hız çizgileri -->
+        <g id="speed-lines" opacity="0.18">
+          <line x1="0" y1="18" x2="-10" y2="18" stroke="#1c1c1a" stroke-width="1"/>
+          <line x1="0" y1="22" x2="-14" y2="22" stroke="#1c1c1a" stroke-width="1"/>
+          <line x1="0" y1="26" x2="-8"  y2="26" stroke="#1c1c1a" stroke-width="1"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Sağ ev — MAVİ KAPI -->
+    <div class="house" id="house-right">
+      <svg viewBox="0 0 70 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="40" width="54" height="46" fill="#fff" stroke="#1c1c1a" stroke-width="1.1"/>
+        <path d="M4 42 L35 10 L66 42" stroke="#1c1c1a" stroke-width="1.1" fill="#c8d8ee"/>
+        <!-- Mavi kapı -->
+        <rect x="26" y="62" width="18" height="24" fill="#3a6ea8" stroke="#1e4d8c" stroke-width="0.9"/>
+        <!-- Kapı topu -->
+        <circle cx="29" cy="75" r="1.8" fill="#b8d4f5"/>
+        <!-- Kapı çerçeve çizgisi -->
+        <line x1="35" y1="62" x2="35" y2="86" stroke="#1e4d8c" stroke-width="0.5" opacity="0.5"/>
+        <!-- Pencereler -->
+        <rect x="11" y="48" width="13" height="11" fill="#ddeeff" stroke="#1c1c1a" stroke-width="0.75"/>
+        <rect x="46" y="48" width="13" height="11" fill="#ddeeff" stroke="#1c1c1a" stroke-width="0.75"/>
+        <!-- Baca -->
+        <rect x="16" y="16" width="8" height="16" fill="#f5f3ef" stroke="#1c1c1a" stroke-width="0.9"/>
+        <!-- Çelenk ipucu -->
+        <circle cx="35" cy="54" r="5" stroke="#3a6ea8" stroke-width="0.7" fill="none" opacity="0.4"/>
+      </svg>
+    </div>
+
+  <div id="arrived-msg">paket teslim edildi</div>
+  </div><!-- /road-strip -->
+  </div><!-- /upper-section -->
+
+
+  <!-- MAVİ Buket -->
+  <div id="bouquet-wrap">
+    <svg class="bouquet-svg" viewBox="0 0 160 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Saplar -->
+      <g stroke="#2d5a2e" stroke-width="1" stroke-linecap="round" opacity="0.5">
+        <path d="M80 105 C79 94 77 80 74 66"/>
+        <path d="M80 105 C81 90 86 74 90 58"/>
+        <path d="M80 105 C78 90 71 76 66 62"/>
+        <path d="M80 105 C82 88 92 74 96 58"/>
+        <path d="M80 105 C80 90 80 72 80 54"/>
+      </g>
+      <!-- Yapraklar -->
+      <path d="M76 86 Q66 78 68 70 Q74 74 76 86Z" fill="#3a7a3c" opacity="0.3"/>
+      <path d="M84 82 Q94 74 92 66 Q86 70 84 82Z" fill="#3a7a3c" opacity="0.25"/>
+
+      <!-- Orta çiçek — koyu mavi -->
+      <g transform="translate(80,34)" stroke="#1e4d8c" stroke-width="0.9" fill="none" opacity="0.9">
+        <ellipse rx="5.5" ry="9" fill="#3a6ea8" stroke="none" opacity="0.7"/>
+        <ellipse rx="5.5" ry="9" transform="rotate(45)" fill="#5b8fcf" stroke="none" opacity="0.6"/>
+        <ellipse rx="5.5" ry="9" transform="rotate(90)" fill="#3a6ea8" stroke="none" opacity="0.7"/>
+        <ellipse rx="5.5" ry="9" transform="rotate(135)" fill="#5b8fcf" stroke="none" opacity="0.6"/>
+        <ellipse rx="5.5" ry="9" stroke="#1e4d8c" stroke-width="0.5"/>
+        <ellipse rx="5.5" ry="9" transform="rotate(45)" stroke="#1e4d8c" stroke-width="0.5"/>
+        <ellipse rx="5.5" ry="9" transform="rotate(90)" stroke="#1e4d8c" stroke-width="0.5"/>
+        <ellipse rx="5.5" ry="9" transform="rotate(135)" stroke="#1e4d8c" stroke-width="0.5"/>
+        <circle r="6" fill="var(--bg)" stroke="#1e4d8c" stroke-width="0.8"/>
+        <circle r="2.5" fill="#1e4d8c"/>
+      </g>
+
+      <!-- Sol çiçek — orta mavi -->
+      <g transform="translate(56,50)" fill="none" opacity="0.85">
+        <ellipse rx="4.5" ry="7.5" fill="#5b8fcf" opacity="0.7"/>
+        <ellipse rx="4.5" ry="7.5" transform="rotate(60)" fill="#8ab4e8" opacity="0.6"/>
+        <ellipse rx="4.5" ry="7.5" transform="rotate(120)" fill="#5b8fcf" opacity="0.7"/>
+        <ellipse rx="4.5" ry="7.5" stroke="#3a6ea8" stroke-width="0.5"/>
+        <ellipse rx="4.5" ry="7.5" transform="rotate(60)" stroke="#3a6ea8" stroke-width="0.5"/>
+        <ellipse rx="4.5" ry="7.5" transform="rotate(120)" stroke="#3a6ea8" stroke-width="0.5"/>
+        <circle r="5" fill="var(--bg)" stroke="#3a6ea8" stroke-width="0.7"/>
+        <circle r="2" fill="#3a6ea8"/>
+      </g>
+
+      <!-- Sağ çiçek — açık mavi -->
+      <g transform="translate(106,48)" fill="none" opacity="0.85">
+        <ellipse rx="4.5" ry="7.5" fill="#8ab4e8" opacity="0.7"/>
+        <ellipse rx="4.5" ry="7.5" transform="rotate(60)" fill="#b8d4f5" opacity="0.65"/>
+        <ellipse rx="4.5" ry="7.5" transform="rotate(120)" fill="#8ab4e8" opacity="0.7"/>
+        <ellipse rx="4.5" ry="7.5" stroke="#5b8fcf" stroke-width="0.5"/>
+        <ellipse rx="4.5" ry="7.5" transform="rotate(60)" stroke="#5b8fcf" stroke-width="0.5"/>
+        <ellipse rx="4.5" ry="7.5" transform="rotate(120)" stroke="#5b8fcf" stroke-width="0.5"/>
+        <circle r="5" fill="var(--bg)" stroke="#5b8fcf" stroke-width="0.7"/>
+        <circle r="2" fill="#5b8fcf"/>
+      </g>
+
+      <!-- Sol üst çiçek — gece mavisi -->
+      <g transform="translate(63,26)" fill="none" opacity="0.75">
+        <ellipse rx="3.5" ry="6" fill="#1e4d8c" opacity="0.6"/>
+        <ellipse rx="3.5" ry="6" transform="rotate(72)" fill="#3a6ea8" opacity="0.55"/>
+        <ellipse rx="3.5" ry="6" transform="rotate(144)" fill="#1e4d8c" opacity="0.6"/>
+        <ellipse rx="3.5" ry="6" stroke="#1e4d8c" stroke-width="0.5"/>
+        <ellipse rx="3.5" ry="6" transform="rotate(72)" stroke="#1e4d8c" stroke-width="0.5"/>
+        <ellipse rx="3.5" ry="6" transform="rotate(144)" stroke="#1e4d8c" stroke-width="0.5"/>
+        <circle r="3.8" fill="var(--bg)" stroke="#1e4d8c" stroke-width="0.6"/>
+        <circle r="1.5" fill="#1e4d8c"/>
+      </g>
+
+      <!-- Sağ üst çiçek — baby blue -->
+      <g transform="translate(98,24)" fill="none" opacity="0.75">
+        <ellipse rx="3.5" ry="6" fill="#b8d4f5" opacity="0.8"/>
+        <ellipse rx="3.5" ry="6" transform="rotate(72)" fill="#8ab4e8" opacity="0.7"/>
+        <ellipse rx="3.5" ry="6" transform="rotate(144)" fill="#b8d4f5" opacity="0.8"/>
+        <ellipse rx="3.5" ry="6" stroke="#5b8fcf" stroke-width="0.5"/>
+        <ellipse rx="3.5" ry="6" transform="rotate(72)" stroke="#5b8fcf" stroke-width="0.5"/>
+        <ellipse rx="3.5" ry="6" transform="rotate(144)" stroke="#5b8fcf" stroke-width="0.5"/>
+        <circle r="3.8" fill="var(--bg)" stroke="#5b8fcf" stroke-width="0.6"/>
+        <circle r="1.5" fill="#5b8fcf"/>
+      </g>
+
+      <!-- Kurdele — mavi -->
+      <path id="r1" class="r-path" d="M72 110 Q58 102 60 112 Q62 122 76 116" stroke="#3a6ea8" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+      <path id="r2" class="r-path" d="M88 110 Q102 102 100 112 Q98 122 84 116" stroke="#3a6ea8" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+      <circle id="r3" cx="80" cy="112" r="3" stroke="#3a6ea8" stroke-width="1.2" fill="var(--bg)" opacity="0" style="transition:opacity 0.3s 0.9s"/>
+      <path id="r4" class="r-path" d="M78 115 Q73 124 68 130" stroke="#5b8fcf" stroke-width="1" stroke-linecap="round" fill="none"/>
+      <path id="r5" class="r-path" d="M82 115 Q87 124 92 130" stroke="#5b8fcf" stroke-width="1" stroke-linecap="round" fill="none"/>
+    </svg>
+    <div class="bouquet-hint">bukete dokun</div>
+  </div>
+
+</div><!-- /scene -->
+
+<!-- Envelope overlay -->
+<div id="env-overlay">
+  <div id="env-wrap">
+    <div class="env-outer">
+      <div class="env-body" id="envBody">
+        <div class="env-flap" id="envFlap"></div>
+        <div class="env-lt"></div><div class="env-rt"></div><div class="env-bt"></div>
+      </div>
+    </div>
+    <div class="env-hint" id="hint">zarfa dokun</div>
+
+    <!-- Mektup kâğıdı — zarfın hemen altında, ayrı blok olarak büyür -->
+    <div id="letter-sheet">
+      <span class="letter-date" id="letterDate"></span>
+      <div id="typewriter"></div><span class="cursor" id="cursor"></span>
+      <div class="letter-sig" id="sig">— seni seviyorum</div>
+    </div>
+
+  </div>
+</div>
+
+<div id="petals-layer"></div>
+
+<script>
+// ── CONFIG ──
+const TARGET    = new Date('2026-02-24T00:00:00');
+const DOT_COUNT = 35;
+const MSG = `Sevgili Arken,
+
+Bugün senin günün.Artik 26 yasinda bir ninesinnn
+
+
+Umuyorum ki bu yil Tum isteklerin teker teker gerceklesir ve sen cok mutlu olursun.Sagligin yerine gelir,operasyon basarili gecer.
+Ehliyetini alirsin,guzel bir is bulursun istediklerini alabilirsin.
+Gonul rahatligi ile disarida kahveni icebilirsin
+Umarim tum isteklerin gerceklesir.
+Maalesef ki bu dogum gununde yaninda olamiyorum
+Bunun icinse sana minik bir mektup hazirlamaya karar verdim.Umarim Minik surprizimi begenebilirsin.
+Iyisi ile eglencesi ile uyuzlugu ile hayatima renk kattin.
+Ilk birlesmemiz mektupla olmustu ve bende sonuncusu da mektupla olsun diye dusundum.
+Hayatima kattigin her sey icin sonsuz tesekkur ederim.Seninle gecirdigimiz her an cok degerli ve kiymetliydi.Gulusun, enerjin ve sevgin hayatimizi gercekten de guzellestirdi ve guzellestirmeye de devam ediyor.
+Birlikte level atlayacagimiz,yeni maceralarin kilidini acacagimiz harika bir yil olsun.
+Su ekranda beliren her bir harf kadar gercek ve net bir sey var ki
+seni seviyorum.
+Yeni yasin,o gicik gulusunun hic solmadigi,harika bir yil olsun.
+Iyi ki dogdun,iyi ki varsin.
+
+
+Lyden.`;
+
+// Mavi konfeti renkleri
+const BLUE_PALETTE = ['#1e4d8c','#3a6ea8','#5b8fcf','#8ab4e8','#b8d4f5','#ddeeff','#0a2a5c'];
+
+let ticker;
+let envelopeOpened = false;
+let arrived        = false;
+let totalSeconds   = 0;
+
+function calcTotal() {
+  const diff = TARGET - new Date();
+  return diff > 0 ? Math.floor(diff / 1000) : 0;
+}
+function getRemainingSeconds() {
+  const diff = TARGET - new Date();
+  return diff > 0 ? Math.floor(diff / 1000) : 0;
+}
+function formatTime(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+// Nokta oluştur
+const dotsEl = document.getElementById('progress-dots');
+for (let i = 0; i < DOT_COUNT; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot'; d.id = 'dot-' + i;
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  const remaining = getRemainingSeconds();
+  document.getElementById('timer-digits').textContent = formatTime(remaining);
+
+  const pct = totalSeconds > 0 ? Math.max(0, 1 - remaining / totalSeconds) : 1;
+
+  const filled = Math.floor(pct * DOT_COUNT);
+  for (let i = 0; i < DOT_COUNT; i++) {
+    document.getElementById('dot-' + i).classList.toggle('filled', i < filled);
+  }
+
+  const strip = document.getElementById('road-strip');
+  const minX  = 76, maxX = strip.offsetWidth - 160;
+  document.getElementById('truck-wrap').style.left = (minX + pct * (maxX - minX)) + 'px';
+
+  if (remaining <= 0 && !arrived) { arrived = true; onArrival(); }
+}
+
+function onArrival() {
+  clearInterval(ticker);
+  document.querySelectorAll('.wheel-spin').forEach(el => el.style.animation = 'none');
+  document.getElementById('speed-lines').style.opacity = '0';
+
+  const strip = document.getElementById('road-strip');
+  document.getElementById('truck-wrap').style.left = (strip.offsetWidth - 160) + 'px';
+
+  for (let i = 0; i < DOT_COUNT; i++) document.getElementById('dot-' + i).classList.add('filled');
+  document.getElementById('timer-digits').textContent = '00:00:00';
+
+  setTimeout(() => document.getElementById('arrived-msg').classList.add('show'), 700);
+  setTimeout(showBouquet, 1600);
+}
+
+function showBouquet() {
+  const bw = document.getElementById('bouquet-wrap');
+  bw.classList.add('show');
+  ['r1','r2','r4','r5'].forEach((id, i) => {
+    setTimeout(() => document.getElementById(id).classList.add('draw'), 300 + i * 180);
+  });
+  setTimeout(() => { document.getElementById('r3').style.opacity = '0.9'; }, 750);
+
+  // Üst bölümü küçült, buket büyüsün
+  setTimeout(() => {
+    document.getElementById('upper-section').classList.add('shrink');
+    document.getElementById('arrived-msg').style.transition = 'opacity 0.5s';
+    document.getElementById('arrived-msg').style.opacity = '0.35';
+    setTimeout(() => {
+      bw.classList.add('big');
+    }, 400);
+  }, 800);
+
+  bw.addEventListener('click', onBouquetClick, { once: true });
+}
+
+function onBouquetClick() {
+  dropConfetti();
+  setTimeout(() => {
+    const s = document.getElementById('scene');
+    s.style.transition = 'opacity 0.7s';
+    s.style.opacity = '0';
+    setTimeout(() => { s.style.display = 'none'; showEnvelopeOverlay(); }, 700);
+  }, 350);
+}
+
+// MAVİ konfeti
+function dropConfetti() {
+  const layer = document.getElementById('petals-layer');
+  const shapes = ['rect','circle'];
+
+  for (let i = 0; i < 55; i++) {
+    const isRect = Math.random() > 0.4;
+    let el;
+    if (isRect) {
+      el = document.createElement('div');
+      el.className = 'confetti-piece';
+      const w = 5 + Math.random() * 7;
+      const h = 4 + Math.random() * 5;
+      el.style.width  = w + 'px';
+      el.style.height = h + 'px';
+    } else {
+      el = document.createElement('div');
+      el.className = 'confetti-piece';
+      const s = 4 + Math.random() * 6;
+      el.style.width  = s + 'px';
+      el.style.height = s + 'px';
+      el.style.borderRadius = '50%';
+    }
+
+    const color = BLUE_PALETTE[Math.floor(Math.random() * BLUE_PALETTE.length)];
+    el.style.background  = color;
+    el.style.left        = (5 + Math.random() * 90) + 'vw';
+    el.style.top         = '-20px';
+    el.style.setProperty('--d',  '5s');
+    el.style.setProperty('--dl', (Math.random() * 1.4) + 's');
+    el.style.setProperty('--r',  (Math.random() * 360) + 'deg');
+    el.style.setProperty('--x',  ((Math.random() - 0.5) * 120) + 'px');
+
+    layer.appendChild(el);
+    setTimeout(() => el.classList.add('drop'), 20);
+    setTimeout(() => el.remove(), 6600);
+  }
+}
+
+function showEnvelopeOverlay() {
+  document.getElementById('env-overlay').classList.add('show');
+  const d = new Date();
+  document.getElementById('letterDate').textContent =
+    d.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
+  setTimeout(() => document.getElementById('hint').classList.add('show'), 900);
+  document.getElementById('envBody').addEventListener('click', openEnvelope, { once: true });
+}
+
+function openEnvelope() {
+  if (envelopeOpened) return;
+  envelopeOpened = true;
+  document.getElementById('hint').classList.remove('show');
+  document.getElementById('envFlap').classList.add('open');
+
+  setTimeout(() => {
+    const sheet = document.getElementById('letter-sheet');
+    sheet.style.transition = 'opacity 0.5s ease';
+    sheet.classList.add('open');
+    setTimeout(typewrite, 650);
+  }, 600);
+}
+
+function typewrite() {
+  const el      = document.getElementById('typewriter');
+  const cur     = document.getElementById('cursor');
+  const overlay = document.getElementById('env-overlay');
+  let i = 0;
+
+  // Kullanıcı altta mı? — 80px toleranslı kontrol
+  function isNearBottom() {
+    return overlay.scrollHeight - overlay.scrollTop - overlay.clientHeight < 80;
+  }
+  function scrollToBottom() {
+    overlay.scrollTop = overlay.scrollHeight;
+  }
+
+  const t = setInterval(() => {
+    if (i < MSG.length) {
+      el.textContent += MSG[i++];
+      // Kullanıcı alttaysa otomatik kaydır
+      if (isNearBottom()) scrollToBottom();
+    } else {
+      clearInterval(t);
+      cur.style.display = 'none';
+      setTimeout(() => {
+        document.getElementById('sig').classList.add('show');
+        if (isNearBottom()) scrollToBottom();
+      }, 500);
+    }
+  }, 44);
+}
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  totalSeconds = calcTotal();
+
+  if (totalSeconds <= 0) {
+    setTimeout(() => {
+      document.getElementById('loading').classList.add('hide');
+      setTimeout(() => {
+        document.getElementById('scene').classList.add('show');
+        arrived = true;
+        updateUI();
+        onArrival();
+      }, 800);
+    }, 1200);
+    return;
+  }
+
+  setTimeout(() => {
+    document.getElementById('loading').classList.add('hide');
+    setTimeout(() => {
+      document.getElementById('scene').classList.add('show');
+      updateUI();
+      ticker = setInterval(updateUI, 1000);
+    }, 800);
+  }, 1400);
+});
+</script>
+</body>
+</html>
